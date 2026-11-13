@@ -4,6 +4,12 @@ import re
 root = Path(__file__).resolve().parents[1] / 'dist'
 page = root / 'index.html'
 html = page.read_text()
+html, count = re.subn(
+    r'<script data-loader>.*?</script>',
+    lambda _: f'<script data-loader>\n{(root / "loader.js").read_text()}\n</script>',
+    html, flags=re.S,
+)
+assert count == 1, 'Expected one inline loader script'
 sources = {
     'style': (root / 'style.css').read_text(),
     'script': (root / 'script.js').read_text() + '\n' + (root / 'construction.js').read_text(),

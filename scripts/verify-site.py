@@ -39,6 +39,7 @@ expected = {
 for tag, source in expected.items():
     blocks = re.findall(rf"<{tag}>\n(.*?)\n</{tag}>", html, re.S)
     assert blocks == [source], f"Inline {tag} is out of sync"
+assert re.findall(r'<script data-loader>\n(.*?)\n</script>', html, re.S) == [(root / 'loader.js').read_text()], 'Loader is out of sync'
 
 refs = References()
 refs.feed(html)

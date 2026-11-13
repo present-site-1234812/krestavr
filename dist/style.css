@@ -30,6 +30,22 @@ button, a, summary { -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
 ::selection { background: #eac4b4; color: var(--ink); }
 [hidden] { display: none !important; }
+#page-loader { position: fixed; z-index: 1000; inset: 0; display: none; place-items: center; background: var(--paper); opacity: 1; transition: opacity .3s ease; }
+html.is-loading { overflow: hidden; }
+html.is-loading #page-loader, #page-loader.is-leaving { display: grid; }
+html.is-loading body > :not(#page-loader) { visibility: hidden; }
+#page-loader.is-leaving { opacity: 0; pointer-events: none; }
+.loader-brand { display: flex; align-items: center; gap: 18px; padding: 24px; color: var(--ink); }
+.loader-brand > span { font-size: clamp(24px, 5vw, 34px); font-weight: 800; letter-spacing: -1px; line-height: 1; }
+.loader-mark { width: 58px; height: 58px; overflow: visible; }
+.loader-base { fill: #dedfd4; }
+.loader-trace { fill: var(--ink); fill-opacity: 0; stroke: var(--ink); stroke-width: .7; stroke-linejoin: miter; stroke-dasharray: 1; stroke-dashoffset: 1; animation: logo-build 2s ease-in-out infinite; }
+@keyframes logo-build {
+  0% { stroke-dashoffset: 1; fill-opacity: 0; stroke-opacity: 1; }
+  45% { stroke-dashoffset: 0; fill-opacity: 0; stroke-opacity: 1; }
+  65%, 82% { stroke-dashoffset: 0; fill-opacity: 1; stroke-opacity: 1; }
+  100% { stroke-dashoffset: 0; fill-opacity: 0; stroke-opacity: 0; }
+}
 .skip-link { position: fixed; top: 8px; left: 12px; transform: translateY(-150%); z-index: 20; padding: 12px 20px; background: var(--white); }
 .skip-link:focus { transform: none; }
 .header, .section, footer { padding-inline: max(var(--gutter), calc((100vw - var(--content)) / 2)); }
@@ -243,4 +259,8 @@ dialog .button { margin-top: 18px; }
   dialog { padding: 42px 24px 24px; }
   dialog h2 { font-size: 26px; }
 }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  #page-loader { transition: none; }
+  .loader-trace { animation: none; stroke-dashoffset: 0; fill-opacity: 1; }
+}

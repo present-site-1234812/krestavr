@@ -30,6 +30,7 @@ jobs:
       - name: Validate site
         run: |
           python3 scripts/verify-site.py
+          node --check dist/loader.js
           node --check dist/script.js
           node --check dist/construction.js
           git diff --exit-code -- dist/index.html

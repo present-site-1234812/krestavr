@@ -40,6 +40,7 @@ fi
 
 python3 scripts/sync-inline.py
 python3 scripts/verify-site.py
+node --check dist/loader.js
 node --check dist/script.js
 node --check dist/construction.js
 

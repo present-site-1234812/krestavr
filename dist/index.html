@@ -32,6 +32,22 @@ button, a, summary { -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
 ::selection { background: #eac4b4; color: var(--ink); }
 [hidden] { display: none !important; }
+#page-loader { position: fixed; z-index: 1000; inset: 0; display: none; place-items: center; background: var(--paper); opacity: 1; transition: opacity .3s ease; }
+html.is-loading { overflow: hidden; }
+html.is-loading #page-loader, #page-loader.is-leaving { display: grid; }
+html.is-loading body > :not(#page-loader) { visibility: hidden; }
+#page-loader.is-leaving { opacity: 0; pointer-events: none; }
+.loader-brand { display: flex; align-items: center; gap: 18px; padding: 24px; color: var(--ink); }
+.loader-brand > span { font-size: clamp(24px, 5vw, 34px); font-weight: 800; letter-spacing: -1px; line-height: 1; }
+.loader-mark { width: 58px; height: 58px; overflow: visible; }
+.loader-base { fill: #dedfd4; }
+.loader-trace { fill: var(--ink); fill-opacity: 0; stroke: var(--ink); stroke-width: .7; stroke-linejoin: miter; stroke-dasharray: 1; stroke-dashoffset: 1; animation: logo-build 2s ease-in-out infinite; }
+@keyframes logo-build {
+  0% { stroke-dashoffset: 1; fill-opacity: 0; stroke-opacity: 1; }
+  45% { stroke-dashoffset: 0; fill-opacity: 0; stroke-opacity: 1; }
+  65%, 82% { stroke-dashoffset: 0; fill-opacity: 1; stroke-opacity: 1; }
+  100% { stroke-dashoffset: 0; fill-opacity: 0; stroke-opacity: 0; }
+}
 .skip-link { position: fixed; top: 8px; left: 12px; transform: translateY(-150%); z-index: 20; padding: 12px 20px; background: var(--white); }
 .skip-link:focus { transform: none; }
 .header, .section, footer { padding-inline: max(var(--gutter), calc((100vw - var(--content)) / 2)); }
@@ -245,7 +261,11 @@ dialog .button { margin-top: 18px; }
   dialog { padding: 42px 24px 24px; }
   dialog h2 { font-size: 26px; }
 }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  #page-loader { transition: none; }
+  .loader-trace { animation: none; stroke-dashoffset: 0; fill-opacity: 1; }
+}
 
 </style><!-- Embedded Golos Text license:
 Copyright 2019 The Golos Text Project Authors (https://github.com/googlefonts/golos-text)
@@ -342,7 +362,56 @@ DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
 
---></head><body><a class="skip-link" href="#main">Перейти к содержанию</a>
+--><script data-loader>
+// Runs in the head, before the embedded images are parsed.
+(() => {
+  'use strict';
+  const root = document.documentElement;
+  let finished = false;
+  root.classList.add('is-loading');
+  root.setAttribute('aria-busy', 'true');
+
+  function reveal() {
+    if (finished) return;
+    finished = true;
+    clearTimeout(failsafe);
+    root.classList.remove('is-loading');
+    root.setAttribute('aria-busy', 'false');
+    const loader = document.querySelector('#page-loader');
+    if (loader) {
+      loader.setAttribute('aria-hidden', 'true');
+      loader.classList.add('is-leaving');
+      setTimeout(() => loader.remove(), 320);
+    }
+    document.dispatchEvent(new Event('site:ready'));
+  }
+
+  // A failed image/font or a stalled connection must never lock the page.
+  const failsafe = setTimeout(reveal, 20000);
+  async function resourcesReady() {
+    try {
+      const images = [...document.images].filter(image => image.hasAttribute('src'));
+      const decoding = images.map(image => {
+        image.loading = 'eager';
+        return image.decode().catch(() => {});
+      });
+      const fonts = document.fonts ? document.fonts.ready : Promise.resolve();
+      await Promise.all([fonts, ...decoding]);
+      // Let layout and the first Canvas frame finish before exposing the page.
+      requestAnimationFrame(() => requestAnimationFrame(reveal));
+    } catch {
+      reveal();
+    }
+  }
+
+  if (document.readyState === 'complete') resourcesReady();
+  else window.addEventListener('load', resourcesReady, { once: true });
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) reveal();
+  });
+})();
+
+</script></head><body><div id="page-loader" role="status" aria-label="Загрузка сайта КРЕСТАВР"><div class="loader-brand" aria-hidden="true"><svg class="loader-mark" viewBox="0 0 40 40"><path class="loader-base" d="M3 5h10v12L27 5h12L22 20l17 15H26L13 23v12H3Z"/><path class="loader-trace" pathLength="1" d="M3 5h10v12L27 5h12L22 20l17 15H26L13 23v12H3Z"/></svg><span>КРЕСТАВР</span></div></div><a class="skip-link" href="#main">Перейти к содержанию</a>
 <header class="header"><a class="brand" href="#" aria-label="Креставр — на главную"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M3 5h10v12L27 5h12L22 20l17 15H26L13 23v12H3Z" fill="currentColor"/></svg><span>КРЕСТАВР<small>СТРОИТЕЛЬНАЯ КОМПАНИЯ</small></span></a><nav id="navigation" aria-label="Главная навигация"><a href="#about">О компании</a><a href="#services">Услуги</a><a href="#projects">Проекты</a><a href="#process">Как работаем</a><a class="nav-contact" href="#contact">Обсудить проект</a></nav><a class="header-cta" href="#contact">Обсудить проект <span aria-hidden="true">↗</span></a><button type="button" class="menu-toggle" aria-label="Открыть меню" aria-expanded="false" aria-controls="navigation"><span class="menu-lines" aria-hidden="true"></span></button></header>
 <main id="main"><section class="hero" aria-labelledby="hero-title"><div class="construction" id="construction">
 <div class="construction-scene">
@@ -780,7 +849,7 @@ requestFields.disabled = false;
   }
 
   function schedule() {
-    if (!frame && playing && visible && !document.hidden) frame = requestAnimationFrame(tick);
+    if (!frame && playing && visible && !document.hidden && !document.documentElement.classList.contains('is-loading')) frame = requestAnimationFrame(tick);
   }
 
   function stopFrame() {
@@ -824,6 +893,7 @@ requestFields.disabled = false;
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) stopFrame(); else schedule();
   });
+  document.addEventListener('site:ready', schedule);
   motion.addEventListener('change', event => { if (event.matches) setPlaying(false); });
 
   const resize = new ResizeObserver(entries => {

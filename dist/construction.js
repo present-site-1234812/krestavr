@@ -253,7 +253,7 @@
   }
 
   function schedule() {
-    if (!frame && playing && visible && !document.hidden) frame = requestAnimationFrame(tick);
+    if (!frame && playing && visible && !document.hidden && !document.documentElement.classList.contains('is-loading')) frame = requestAnimationFrame(tick);
   }
 
   function stopFrame() {
@@ -297,6 +297,7 @@
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) stopFrame(); else schedule();
   });
+  document.addEventListener('site:ready', schedule);
   motion.addEventListener('change', event => { if (event.matches) setPlaying(false); });
 
   const resize = new ResizeObserver(entries => {
