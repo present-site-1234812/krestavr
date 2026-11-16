@@ -15,6 +15,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      PAGES_ARTIFACT: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
     permissions:
       contents: read
       pages: write
@@ -41,7 +43,33 @@ jobs:
         uses: actions/upload-pages-artifact@v4
         with:
           path: dist
+          name: ${{ env.PAGES_ARTIFACT }}
+      - name: Wait for Pages artifact metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          import os
+          import time
+          from urllib.request import Request, urlopen
+
+          url = f"{os.environ['GITHUB_API_URL']}/repos/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}/artifacts?per_page=100"
+          headers = {"Authorization": f"Bearer {os.environ['GH_TOKEN']}", "Accept": "application/vnd.github+json"}
+          for attempt in range(30):
+              with urlopen(Request(url, headers=headers), timeout=20) as response:
+                  artifacts = json.load(response)["artifacts"]
+              matches = [item for item in artifacts if item["name"] == os.environ["PAGES_ARTIFACT"] and not item["expired"]]
+              if len(matches) == 1:
+                  print("Pages artifact is available")
+                  break
+              time.sleep(2)
+          else:
+              raise SystemExit("Pages artifact metadata did not become available")
+          PYTHON
       - name: Deploy website
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ env.PAGES_ARTIFACT }}
 
