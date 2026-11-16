@@ -327,8 +327,9 @@ dialog .button { margin-top: 18px; }
 .services-blueprint svg { display: block; width: 100%; height: 100%; }
 .blueprint-diagram { transform-origin: center; transform: rotate(-3deg) scale(1.14); }
 .blueprint-grid { fill: none; stroke: #7c9db2; stroke-width: .8; stroke-opacity: .22; }
-.blueprint-shading path { fill: none; stroke-dasharray: 1; stroke-linecap: round; stroke-linejoin: round; }
+.blueprint-shading path { fill: none; stroke-dasharray: 1; stroke-dashoffset: 1; stroke-linecap: round; stroke-linejoin: round; }
 .blueprint-pencil-stroke { stroke-width: 34; }
+.blueprint-surface { opacity: 0; }
 .blueprint-pencil-grain { stroke: #bbc3b3; stroke-width: .9; stroke-opacity: .2; }
 @media (prefers-reduced-motion: reduce) { .services-blueprint { display: none; } }
 
