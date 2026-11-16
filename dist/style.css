@@ -323,13 +323,16 @@ dialog .button { margin-top: 18px; }
 /* A drawing becomes the existing services surface, entirely behind the content. */
 .services { position: relative; isolation: isolate; }
 .services > :not(.services-blueprint) { position: relative; z-index: 1; }
-.services-blueprint { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: #1450a8; }
+.services-blueprint { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: #dce9ef; background-image: repeating-linear-gradient(0deg, #ffffff1a 0 1px, transparent 1px 4px); }
 .services-blueprint svg { display: block; width: 100%; height: 100%; }
 .blueprint-diagram { transform-origin: center; transform: rotate(-3deg) scale(1.14); }
-.blueprint-grid { fill: none; stroke: #80c9ff; stroke-width: .8; stroke-opacity: .22; }
-.blueprint-plan, .blueprint-dimensions { fill: none; stroke: #d4f4ff; stroke-width: 2; stroke-opacity: .72; filter: drop-shadow(0 0 2px #73c8ff66); }
+.blueprint-grid { fill: none; stroke: #7c9db2; stroke-width: .8; stroke-opacity: .22; }
+.blueprint-plan, .blueprint-dimensions { fill: none; stroke: #526f88; stroke-width: 1.65; stroke-opacity: .4; }
 .blueprint-plan path, .blueprint-dimensions path { stroke-dasharray: 1; }
-.blueprint-dimensions { stroke-width: 1; stroke-opacity: .5; }
-.blueprint-sketch { fill: #8dd3ff; fill-opacity: .16; stroke: #bfeaff; stroke-width: 1.5; stroke-opacity: .4; opacity: 0; }
-.blueprint-courtyard { fill: #c9efff; }
+.blueprint-dimensions { stroke-width: .9; stroke-opacity: .34; }
+.blueprint-sketch { fill: #8da7b6; fill-opacity: .08; stroke: #6b879c; stroke-width: 1; stroke-opacity: .2; opacity: 0; }
+.blueprint-courtyard { fill: #819ba5; }
+.blueprint-shading path { fill: none; stroke-dasharray: 1; stroke-linecap: round; stroke-linejoin: round; }
+.blueprint-pencil-stroke { stroke-width: 34; }
+.blueprint-pencil-grain { stroke: #bbc3b3; stroke-width: .9; stroke-opacity: .2; }
 @media (prefers-reduced-motion: reduce) { .services-blueprint { display: none; } }
