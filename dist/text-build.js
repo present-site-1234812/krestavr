@@ -1,19 +1,35 @@
-/* Sequential material construction: timber, concrete, then painted type. */
+/* Company heading: reinforcement, concrete and paint, with independent workers. */
 (() => {
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
-  const targets = [...document.querySelectorAll('#about-title,#services-title,#projects-title,#process-title')];
+  const targets = [...document.querySelectorAll('#about-title')];
   if (motion.matches || !('IntersectionObserver' in window) || !Element.prototype.animate) return;
   const jobs = [];
   let current = null;
   let suspended = false;
-  const worker = `<svg viewBox="0 0 80 48" aria-hidden="true" focusable="false">
-    <path class="builder-scaffold" d="M4 43h67M9 43v5m52-5v5"/>
-    <g class="builder-helper" transform="translate(4 17) scale(.72)"><path d="M12 23l-3 8m9-8 4 8M10 16l-5 5h17"/><path class="builder-vest" d="M10 13h9l3 11H8z"/><circle class="builder-face" cx="15" cy="9" r="4"/><path class="builder-hat" d="M9 8a6 6 0 0 1 12 0m-14 1h16"/><path class="builder-brick" d="M0 17h10v5H0z"/></g>
-    <g transform="translate(30 8)"><path d="M12 23l-3 8m9-8 4 8"/><path class="builder-vest" d="M10 13h9l3 11H8z"/><circle class="builder-face" cx="15" cy="9" r="4"/><path class="builder-hat" d="M9 8a6 6 0 0 1 12 0m-14 1h16"/><path class="builder-arm" d="M16 16l8-5 4 3M24 11l-2-5m-3 0h7"/></g>
-    <g class="builder-sparks"><path d="M59 19l5-3m-4 8 8 1m-9 3 4 5"/><circle cx="67" cy="19" r="1"/></g>
-    <g class="builder-dust"><circle cx="57" cy="36" r="2"/><circle cx="63" cy="39" r="3"/><circle cx="69" cy="36" r="1.5"/></g>
-    <g class="builder-chips"><path d="M61 29h3v3h-3zM68 31h2v2h-2z"/></g>
-  </svg>`;
+  const workers = [
+    `<svg viewBox="0 0 36 48" aria-hidden="true" focusable="false">
+      <path class="worker-shadow" d="M5 45h25"/>
+      <path class="worker-boots" d="M11 31l-2 12h7l2-11m4-1 3 12h6"/>
+      <path class="worker-suit" d="M10 18h13l3 16H9z"/>
+      <path class="worker-vest" d="M10 19h5l3 13 2-13h4l2 15H9z"/>
+      <path class="worker-reflector" d="M10 28h14m-10-8 3 11m5-11-3 11"/>
+      <circle class="worker-skin" cx="17" cy="12" r="6"/>
+      <path class="worker-helmet" d="M10 11a7 7 0 0 1 14 0H9m8-8v7"/>
+      <path class="worker-mask" d="M16 10h9v9h-9z"/><path class="worker-visor" d="M18 12h5v3h-5z"/>
+      <g class="worker-tool-arm"><path class="worker-sleeve" d="M21 21l5 5 6-2"/><path class="worker-glove" d="M29 24h4"/><path class="worker-torch" d="M32 22v8"/><path class="worker-weld" d="M31 31l-3 3m5-2 2 4m-4-7-3-1"/></g>
+    </svg>`,
+    `<svg viewBox="0 0 36 48" aria-hidden="true" focusable="false">
+      <path class="worker-shadow" d="M4 45h28"/>
+      <path class="worker-boots" d="M12 31l-2 12h7l2-10m3-2 2 12h6"/>
+      <path class="worker-suit" d="M10 19h13l3 15H9z"/>
+      <path class="worker-vest worker-vest-light" d="M10 19h5l3 12 2-12h4l2 15H9z"/>
+      <path class="worker-reflector" d="M10 27h15m-10-7 3 12m4-12-3 12"/>
+      <circle class="worker-skin" cx="17" cy="12" r="6"/>
+      <path class="worker-helmet worker-helmet-light" d="M10 11a7 7 0 0 1 14 0H9m8-8v7"/>
+      <path class="worker-face" d="M20 14h1m-7 4h6"/>
+      <g class="worker-roller-arm"><path class="worker-sleeve" d="M22 21l6-3 2-6"/><path class="worker-glove" d="M29 13l1-3"/><path class="worker-roller" d="M30 10V6h-6"/><rect class="worker-roller-head" x="20" y="3" width="12" height="5" rx="1"/></g>
+    </svg>`
+  ];
   const cloud = `<svg viewBox="0 0 72 44" aria-hidden="true"><g class="builder-dust-cloud" fill="#b3a58d"><ellipse cx="30" cy="27" rx="13" ry="8"/><circle cx="19" cy="22" r="9"/><circle cx="40" cy="19" r="12"/><circle cx="53" cy="27" r="8"/></g><g fill="#9d6c50"><path d="M18 34h4v3h-4zM44 33h3v4h-3zM57 31h2v2h-2z"/></g><path d="M34 12l-2-6m13 9 6-4m-25 7-7-2" fill="none" stroke="#c49b45" stroke-width="1.5"/></svg>`;
 
   function restore(job) {
@@ -87,23 +103,33 @@
         animate(job,layer,reveal,{duration:time,delay,easing:'ease-in-out'});
       };
       // Each material is completed and briefly held before the next is applied.
-      addMaterial('wood',100,850);
+      addMaterial('rebar',100,850);
       addMaterial('concrete',1250,900);
       addMaterial('paint',2450,950);
-      const crew = document.createElement('span');
-      crew.className = 'text-build-crew';
-      crew.innerHTML = worker;
-      crew.style.left = `${Math.max(0,Math.min(origin.width-80,lines[0].left+22))}px`;
-      crew.style.top = `${lines.at(-1).bottom-36}px`;
-      stage.append(crew);
-      // Only the tools move. The crew stays at its workstation throughout.
-      const completion = animate(job,crew,[
-        {opacity:0,offset:0},{opacity:1,offset:.08},
-        {opacity:1,offset:.91},{opacity:0,offset:1}
-      ],{duration,easing:'ease-in-out'});
-      animate(job,crew.querySelector('.builder-sparks'),[
-        {opacity:0},{opacity:.7,offset:.45},{opacity:0,offset:1}
-      ],{duration:700,delay:1250});
+      let completion;
+      workers.forEach((model,workerIndex) => {
+        const crew = document.createElement('span');
+        crew.className = `text-build-crew text-build-worker-${workerIndex+1}`;
+        crew.innerHTML = model;
+        const interval = workerIndex === 0 ? 400 : 300;
+        crew.dataset.interval = String(interval);
+        stage.append(crew);
+        const positions = [];
+        const fractions = workerIndex === 0 ? [.08,.2,.32] : [.68,.82,.94];
+        // Hold each position, then reappear elsewhere. No fast running between points.
+        for (let time=0,step=0; time<duration; time+=interval,step++) {
+          const line = lines[(step+workerIndex)%lines.length];
+          const x = Math.max(0,Math.min(origin.width-36,line.left+(line.right-line.left)*fractions[step%fractions.length]-18));
+          positions.push({transform:`translate(${x}px,${line.bottom-42}px)`,offset:time/duration,easing:'steps(1,end)'});
+        }
+        positions.push({...positions.at(-1),offset:1});
+        animate(job,crew,positions,{duration,easing:'linear'});
+        const visibility = animate(job,crew,[
+          {opacity:0,offset:0},{opacity:1,offset:.06},
+          {opacity:1,offset:.94},{opacity:0,offset:1}
+        ],{duration,easing:'ease-in-out'});
+        if (workerIndex === 0) completion = visibility;
+      });
       // A few local plumes at material changes, rather than dust on every letter.
       for (const phase of [420,1510]) {
         lines.forEach((line,row) => {

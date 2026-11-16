@@ -265,16 +265,18 @@ dialog .button { margin-top: 18px; }
   .loader-trace { animation: none; stroke-dashoffset: 0; fill-opacity: 1; }
 }
 
-/* Quiet workstations; material layers build timber, concrete and painted type. */
+/* Company heading: rebar mesh, concrete, paint and two independent workers. */
 .text-building, .text-build-pending { position: relative; }
 .text-build-pending > .text-build-copy { opacity: .12; }
 .text-building > .text-build-copy { opacity: 0; }
 .text-build-stage, .text-build-material { position: absolute; inset: 0; display: block; pointer-events: none; }
 .text-build-stage { z-index: 1; }
 .text-build-material { opacity: 0; }
-.text-build-wood {
+.text-build-rebar {
   color: transparent; -webkit-text-fill-color: transparent;
-  background: repeating-linear-gradient(7deg, #8e6440 0 1px, #be9466 1px 4px, #aa8053 4px 5px, #d0ae7c 5px 9px);
+  background: repeating-linear-gradient(90deg, transparent 0 4px, #5f7073 4px 5px, #a6b3b1 5px 5.6px, transparent 5.6px 9px),
+    repeating-linear-gradient(0deg, transparent 0 5px, #69797a 5px 6px, transparent 6px 10px);
+  -webkit-text-stroke: .35px #718080;
   background-clip: text; -webkit-background-clip: text;
 }
 .text-build-concrete {
@@ -290,26 +292,33 @@ dialog .button { margin-top: 18px; }
 .builder-dust-cloud { filter: blur(1.8px); }
 .text-build-copy { display: block; }
 .text-build-crew {
-  position: absolute; left: 0; top: 0; width: 80px; height: 48px;
-  pointer-events: none; z-index: 2; color: #444d42; line-height: 0;
+  position: absolute; left: 0; top: 0; width: 36px; height: 48px;
+  pointer-events: none; z-index: 2; line-height: 0;
 }
 .text-build-crew svg { width: 100%; height: 100%; overflow: visible; }
-.text-build-crew path { fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
-.text-build-crew .builder-scaffold { stroke-width: 1; opacity: .28; }
-.text-build-crew .builder-vest { fill: #aa4326; stroke: #aa4326; }
-.text-build-crew .builder-face { fill: #dbc5a5; }
-.text-build-crew .builder-hat { fill: #d4ad52; stroke: #b28a38; }
-.text-build-crew .builder-brick { fill: #bd785b; stroke: #9e6149; }
-.builder-arm { transform-origin: 16px 16px; animation: builder-hammer 550ms ease-in-out infinite alternate; }
-.text-build-crew .builder-sparks { opacity: 0; transform-origin: 59px 24px; }
-.text-build-crew .builder-sparks path { stroke: #c79539; stroke-width: 1.3; }
-.builder-sparks circle { fill: #dfba65; }
-.builder-dust { fill: #b7ad97; animation: builder-dust 850ms ease-out infinite; }
-.text-build-crew .builder-chips path { fill: #aa7155; stroke: none; }
-.builder-chips { animation: builder-chip 700ms ease-in infinite; }
-@keyframes builder-hammer { to { transform: rotate(-16deg); } }
-@keyframes builder-dust { from { opacity: .4; transform: translate(0,0) scale(1); } to { opacity: 0; transform: translate(7px,-5px) scale(1.1); } }
-@keyframes builder-chip { from { opacity: .7; transform: translate(0,0); } to { opacity: 0; transform: translate(3px,8px); } }
+.text-build-crew path { stroke-linecap: round; stroke-linejoin: round; }
+.worker-shadow { fill: none; stroke: #6b7269; opacity: .22; stroke-width: 1.5; }
+.worker-boots { fill: #303b37; stroke: #303b37; stroke-width: 2; }
+.worker-suit { fill: #53635e; }
+.worker-vest { fill: #ad5735; }
+.worker-vest-light { fill: #b8a652; }
+.worker-reflector { fill: none; stroke: #e4dcb4; stroke-width: 1.4; }
+.worker-skin { fill: #d2ad86; }
+.worker-helmet { fill: #c4a34f; stroke: #9a7c37; stroke-width: 1.4; }
+.worker-helmet-light { fill: #dedcd0; stroke: #a9aa9d; }
+.worker-mask { fill: #3a4847; stroke: #263333; stroke-width: 1; }
+.worker-visor { fill: #8ba6a0; }
+.worker-face { fill: none; stroke: #705b4c; stroke-width: 1; }
+.worker-sleeve { fill: none; stroke: #53635e; stroke-width: 4; }
+.worker-glove { fill: none; stroke: #d1b478; stroke-width: 3.5; }
+.worker-torch, .worker-roller { fill: none; stroke: #465452; stroke-width: 2; }
+.worker-roller-head { fill: #89978a; stroke: #637465; stroke-width: 1; }
+.worker-tool-arm { transform-origin: 23px 22px; animation: worker-weld-tool 400ms ease-in-out infinite alternate; }
+.worker-roller-arm { transform-origin: 23px 22px; animation: worker-paint-tool 600ms ease-in-out infinite alternate; }
+.worker-weld { fill: none; stroke: #cca44b; stroke-width: 1.2; animation: worker-weld-light 600ms ease-out infinite; }
+@keyframes worker-weld-tool { to { transform: rotate(-10deg); } }
+@keyframes worker-paint-tool { to { transform: rotate(12deg); } }
+@keyframes worker-weld-light { 0%, 60%, 100% { opacity: 0; } 25% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
   .text-build-copy { opacity: 1 !important; }
   .text-build-stage { display: none; }
