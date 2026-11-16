@@ -12,7 +12,7 @@ html, count = re.subn(
 assert count == 1, 'Expected one inline loader script'
 sources = {
     'style': (root / 'style.css').read_text(),
-    'script': (root / 'script.js').read_text() + '\n' + (root / 'construction.js').read_text(),
+    'script': (root / 'script.js').read_text() + '\n' + (root / 'construction.js').read_text() + '\n' + (root / 'text-build.js').read_text(),
 }
 for tag, source in sources.items():
     html, count = re.subn(

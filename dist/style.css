@@ -264,3 +264,23 @@ dialog .button { margin-top: 18px; }
   #page-loader { transition: none; }
   .loader-trace { animation: none; stroke-dashoffset: 0; fill-opacity: 1; }
 }
+
+/* Tiny construction crew: transient, decorative, and without layout shifts. */
+.text-building { position: relative; }
+.text-build-copy { display: block; }
+.text-build-crew {
+  position: absolute; left: 0; top: 0; width: 30px; height: 32px;
+  pointer-events: none; z-index: 2; color: #444d42;
+  filter: none; line-height: 0;
+}
+.text-build-crew svg { width: 100%; height: 100%; overflow: visible; }
+.text-build-crew path { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.text-build-crew .builder-vest { fill: #aa4326; stroke: #aa4326; }
+.text-build-crew .builder-face { fill: #dbc5a5; }
+.text-build-crew .builder-hat { fill: #d4ad52; stroke: #b28a38; }
+.builder-arm { transform-origin: 16px 16px; animation: builder-hammer 260ms ease-in-out infinite alternate; }
+@keyframes builder-hammer { to { transform: rotate(-24deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .text-build-copy { clip-path: none !important; }
+  .text-build-crew { display: none; }
+}
