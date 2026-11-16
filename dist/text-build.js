@@ -117,26 +117,31 @@
             const part=line.glyphs.filter(g=>(g.left+g.width/2<middle?0:1)===index);
             const stationX=Math.max(0,Math.min(origin.width-40,(left+right)/2-31));
             const stationY=line.top+font*.65-24;
-            const corner=(phase*lines.length+step+index*2)%corners.length;
+            const corner=(phase+index*2)%corners.length;
             const point=corners[corner];
             const start=phaseStarts[phase]+step*stride,arrival=start+travel,work=arrival+15;
             const from=previous[index]||point;
             if(!motions[index].length)motions[index].push({transform:pose(from),offset:0});
             else motions[index].push({transform:pose(from),offset:start/duration});
-            const mid={x:(from.x+point.x)/2,y:(from.y+point.y)/2};
-            if(from.y===point.y) {
-              // The upper leap rises; the lower route stays in the gap under the text.
-              mid.y+=point.y===topEdge?-9:1;
-            } else if(from.x===point.x) {
-              const clearance=point.x===leftEdge?origin.left-workerWidth-5:innerWidth-origin.left-rightEdge-workerWidth-2;
-              mid.x+=(point.x===leftEdge?-1:1)*Math.max(0,Math.min(6,clearance));
+            if(from.x===point.x && from.y===point.y) {
+              // Stay at the workstation for the whole material phase.
+              motions[index].push({transform:pose(point),offset:(start+stride)/duration});
+            } else {
+              const mid={x:(from.x+point.x)/2,y:(from.y+point.y)/2};
+              if(from.y===point.y) {
+                // The upper leap rises; the lower route stays in the gap under the text.
+                mid.y+=point.y===topEdge?-9:1;
+              } else if(from.x===point.x) {
+                const clearance=point.x===leftEdge?origin.left-workerWidth-5:innerWidth-origin.left-rightEdge-workerWidth-2;
+                mid.x+=(point.x===leftEdge?-1:1)*Math.max(0,Math.min(6,clearance));
+              }
+              motions[index].push(
+                {transform:pose(mid),offset:(start+travel*.5)/duration},
+                {transform:pose(point,'1.08,.92'),offset:arrival/duration},
+                {transform:pose(point),offset:(arrival+60)/duration},
+                {transform:pose(point),offset:(start+stride)/duration}
+              );
             }
-            motions[index].push(
-              {transform:pose(mid),offset:(start+travel*.5)/duration},
-              {transform:pose(point,'1.08,.92'),offset:arrival/duration},
-              {transform:pose(point),offset:(arrival+60)/duration},
-              {transform:pose(point),offset:(start+stride)/duration}
-            );
             const facing=corner===0||corner===3?'scaleX(1)':'scaleX(-1)';
             if(!facings[index].length)facings[index].push({transform:facing,offset:0});
             facings[index].push({transform:facing,offset:arrival/duration},{transform:facing,offset:(start+stride)/duration});
