@@ -5,7 +5,9 @@
   if(!section || motion.matches || !Element.prototype.animate || !window.IntersectionObserver) return;
   let layer,timer,started=false;
   const animations=[],checks=[];
-  function destroy(){clearTimeout(timer);animations.splice(0).forEach(a=>a.cancel());layer?.remove();layer=null;checks.splice(0).forEach(check=>check.remove());}
+  const textItems=[...section.querySelectorAll('.section-label, .section-heading h2, .section-heading > p, .service-list details')];
+  textItems.forEach(element=>element.classList.add('services-text-pending'));
+  function destroy(){textItems.forEach(element=>element.classList.remove('services-text-pending'));clearTimeout(timer);animations.splice(0).forEach(a=>a.cancel());layer?.remove();layer=null;checks.splice(0).forEach(check=>check.remove());}
   function animate(element,frames,options){
     const a=element.animate(frames,{fill:'both',...options});
     animations.push(a);return a;
@@ -15,6 +17,10 @@
     started=true;observer.disconnect();readyObserver.disconnect();
     timer=setTimeout(destroy,6500);
     try{
+      textItems.forEach((element,index)=>{
+        animate(element,[{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:550,delay:index*70,easing:'cubic-bezier(.22,1,.36,1)'});
+        element.classList.remove('services-text-pending');
+      });
       layer=section.querySelector('.services-blueprint');
       if(!layer)return;
       const summaries=[...section.querySelectorAll('.service-list summary')];
@@ -62,6 +68,7 @@
   observer.observe(section);
   if(document.documentElement.classList.contains('is-loading'))readyObserver.observe(document.documentElement,{attributes:true,attributeFilter:['class']});
   else checkVisibility();
+  section.addEventListener('focusin',build,{once:true});
   window.addEventListener('pageshow',checkVisibility);
   window.addEventListener('pagehide',destroy);
   document.addEventListener('visibilitychange',()=>{
