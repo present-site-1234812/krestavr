@@ -1,17 +1,19 @@
-/* Services paper shading is scrubbed only by this section's scroll position. */
+/* Services shading plays once when visible, independently of company text. */
 (() => {
   const section=document.querySelector('#services');
   const motion=matchMedia('(prefers-reduced-motion: reduce)');
-  if(!section || !Element.prototype.animate) return;
-  let layer,scheduled=false,disabled=false;
+  if(!section || motion.matches || !Element.prototype.animate || !window.IntersectionObserver) return;
+  let layer,timer,started=false;
   const animations=[];
-  const duration=3550;
-  function destroy(){animations.splice(0).forEach(a=>a.cancel());layer?.remove();layer=null;}
+  function destroy(){clearTimeout(timer);animations.splice(0).forEach(a=>a.cancel());layer?.remove();layer=null;}
   function animate(element,frames,options){
     const a=element.animate(frames,{fill:'both',...options});
-    a.pause();a.currentTime=0;animations.push(a);return a;
+    animations.push(a);return a;
   }
   function build(){
+    if(started)return;
+    started=true;observer.disconnect();readyObserver.disconnect();
+    timer=setTimeout(destroy,4200);
     try{
       layer=document.createElement('div');layer.className='services-blueprint';layer.setAttribute('aria-hidden','true');
       const grid=[];
@@ -40,40 +42,31 @@
       });
       animate(layer.querySelector('.blueprint-grid'),[{opacity:0},{opacity:1}],{duration:300});
       const surface=layer.querySelector('.blueprint-surface');
-      animate(surface,[{opacity:0},{opacity:1}],{duration:200,delay:3350,easing:'ease-out'});
-    }catch{disabled=true;destroy();}
+      const completion=animate(surface,[{opacity:0},{opacity:1}],{duration:200,delay:3350,easing:'ease-out'});
+      completion.finished.then(destroy,destroy);
+    }catch{destroy();}
   }
-  function update(){
-    scheduled=false;
-    if(disabled || motion.matches || document.hidden)return;
+  function checkVisibility(){
+    if(started || motion.matches || document.hidden || document.documentElement.classList.contains('is-loading'))return;
     const rect=section.getBoundingClientRect();
-    const height=innerHeight;
-    if(!layer && (rect.top>height || rect.bottom<0))return;
-    if(!layer)build();
-    if(!layer)return;
-    // Entering the viewport reveals paper; reaching the section completes shading.
-    const distance=height*.9+rect.height*.1;
-    const raw=Math.max(0,Math.min(1,(height*.9-rect.top)/distance));
-    const progress=raw>.999?1:raw;
-    try{
-      animations.forEach(a=>{a.currentTime=progress*duration;});
-      // Keep the paused timeline for reverse scrolling, but show the exact base color.
-      layer.style.visibility=progress>=1?'hidden':'visible';
-    }catch{disabled=true;destroy();}
+    const visible=Math.min(rect.bottom,innerHeight)-Math.max(rect.top,0);
+    if(visible>=Math.min(rect.height*.12,innerHeight*.12))build();
   }
-  function schedule(){
-    if(scheduled)return;
-    scheduled=true;
-    requestAnimationFrame(update);
-  }
-  window.addEventListener('scroll',schedule,{passive:true});
-  window.addEventListener('resize',schedule,{passive:true});
-  window.addEventListener('load',schedule,{once:true});
-  window.addEventListener('pageshow',schedule);
+  // The observer only triggers playback; scrolling never controls animation time.
+  const observer=new IntersectionObserver(checkVisibility,{threshold:.12});
+  // Wait for the loading screen itself, without using the company animation event.
+  const readyObserver=new MutationObserver(()=>{
+    if(!document.documentElement.classList.contains('is-loading')){
+      readyObserver.disconnect();checkVisibility();
+    }
+  });
+  observer.observe(section);
+  if(document.documentElement.classList.contains('is-loading'))readyObserver.observe(document.documentElement,{attributes:true,attributeFilter:['class']});
+  else checkVisibility();
+  window.addEventListener('pageshow',checkVisibility);
   window.addEventListener('pagehide',destroy);
-  section.addEventListener('toggle',schedule,true);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
-  motion.addEventListener('change',()=>{if(motion.matches)destroy();else schedule();});
-  if(document.fonts)document.fonts.ready.then(schedule,()=>{});
-  schedule();
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden&&started)destroy();else if(!document.hidden)checkVisibility();
+  });
+  motion.addEventListener('change',()=>{if(motion.matches){started=true;observer.disconnect();readyObserver.disconnect();destroy();}});
 })();
