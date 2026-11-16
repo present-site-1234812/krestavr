@@ -90,17 +90,19 @@
       const steel=svgElement('svg',{class:'text-build-rebar',width:origin.width,height:origin.height,viewBox:`0 0 ${origin.width} ${origin.height}`});stage.append(steel);
       const stride=750, span=lines.length*stride, phaseStarts=[0,span+200,2*(span+200)], duration=phaseStarts[2]+span+220;
       clearTimeout(job.timer);job.timer=setTimeout(finish,duration/speed+650);
-      // Separate lanes beside the complete text envelope, never across its letters.
-      const railLeft=Math.max(...lines.map(line=>line.right))+8;
-      const freeWidth=Math.max(0,Math.min(origin.width+12,innerWidth-origin.left-8)-railLeft);
-      const railWorkerWidth=Math.min(40,(freeWidth-4)/2);
-      const beside=railWorkerWidth>=14;
-      const workerWidth=beside?railWorkerWidth:16;
-      const workerScale=workerWidth/40;
+      // Four safe corner stations around the letters; routes follow the perimeter.
+      const textRight=Math.max(...lines.map(line=>line.right));
+      const desiredWidth=innerWidth<=700?18:26;
+      const workerWidth=Math.max(10,Math.min(desiredWidth,origin.left-5,innerWidth-origin.left-textRight-8));
+      const workerHeight=workerWidth*1.2;
+      const leftEdge=-workerWidth-3,rightEdge=textRight+6;
+      const topEdge=-workerHeight-4,bottomEdge=origin.height+1;
+      const corners=[{x:leftEdge,y:topEdge},{x:rightEdge,y:topEdge},{x:rightEdge,y:bottomEdge},{x:leftEdge,y:bottomEdge}];
       const crews=[0,1].map(index=>{
-        const crew=document.createElement('span');crew.className=`text-build-crew text-build-worker-${index+1}`;crew.innerHTML=model(index===1);crew.style.width=`${workerWidth}px`;crew.style.height=`${workerWidth*1.2}px`;crew.dataset.lane=beside?'side':'below';stage.append(crew);return crew;
+        const crew=document.createElement('span');crew.className=`text-build-crew text-build-worker-${index+1}`;crew.innerHTML=model(index===1);crew.style.width=`${workerWidth}px`;crew.style.height=`${workerHeight}px`;crew.dataset.route='corners';stage.append(crew);return crew;
       });
-      const motions=[[],[]];
+      const motions=[[],[]],facings=[[],[]],previous=[null,null];
+      const pose=(point,scale='1,1')=>`translate(${point.x}px,${point.y}px) scale(${scale})`;
       let completion;
       for(let phase=0;phase<3;phase++) {
         const material=['rebar','concrete','paint'][phase];
@@ -115,12 +117,30 @@
             const part=line.glyphs.filter(g=>(g.left+g.width/2<middle?0:1)===index);
             const stationX=Math.max(0,Math.min(origin.width-40,(left+right)/2-31));
             const stationY=line.top+font*.65-24;
-            const x=beside?railLeft+index*(workerWidth+4):Math.max(0,Math.min(origin.width-workerWidth,(left+right)/2-workerWidth/2));
-            const y=beside?line.top+font*.65-24*workerScale:origin.height+1;
+            const corner=(phase*lines.length+step+index*2)%corners.length;
+            const point=corners[corner];
             const start=phaseStarts[phase]+step*stride,arrival=start+travel,work=arrival+15;
-            const pose=`translate(${x}px,${y}px)`;
-            if(!motions[index].length)motions[index].push({transform:pose,offset:0});
-            motions[index].push({transform:pose,offset:arrival/duration},{transform:pose,offset:(start+stride)/duration});
+            const from=previous[index]||point;
+            if(!motions[index].length)motions[index].push({transform:pose(from),offset:0});
+            else motions[index].push({transform:pose(from),offset:start/duration});
+            const mid={x:(from.x+point.x)/2,y:(from.y+point.y)/2};
+            if(from.y===point.y) {
+              // The upper leap rises; the lower route stays in the gap under the text.
+              mid.y+=point.y===topEdge?-9:1;
+            } else if(from.x===point.x) {
+              const clearance=point.x===leftEdge?origin.left-workerWidth-5:innerWidth-origin.left-rightEdge-workerWidth-2;
+              mid.x+=(point.x===leftEdge?-1:1)*Math.max(0,Math.min(6,clearance));
+            }
+            motions[index].push(
+              {transform:pose(mid),offset:(start+travel*.5)/duration},
+              {transform:pose(point,'1.08,.92'),offset:arrival/duration},
+              {transform:pose(point),offset:(arrival+60)/duration},
+              {transform:pose(point),offset:(start+stride)/duration}
+            );
+            const facing=corner===0||corner===3?'scaleX(1)':'scaleX(-1)';
+            if(!facings[index].length)facings[index].push({transform:facing,offset:0});
+            facings[index].push({transform:facing,offset:arrival/duration},{transform:facing,offset:(start+stride)/duration});
+            previous[index]=point;
             animate(action,[{transform:'translateY(3px) rotate(-8deg)'},{transform:'translateY(-2px) rotate(5deg)',offset:.5},{transform:'translateY(0) rotate(0)'}],{duration:320,delay:work,easing:'ease-in-out'});
             if(phase===0) {
               part.forEach((glyph,i)=>{
@@ -159,6 +179,8 @@
       animate(steel,[{opacity:1},{opacity:0}],{duration:140,delay:phaseStarts[2]-150});
       crews.forEach((crew,index)=>{
         motions[index].push({...motions[index].at(-1),offset:1});
+        facings[index].push({...facings[index].at(-1),offset:1});
+        animate(crew.querySelector('svg'),facings[index],{duration,easing:'linear'});
         animate(crew,motions[index].map(frame=>({...frame,easing:'cubic-bezier(.4,0,.2,1)'})),{duration,easing:'linear'});
         const a=animate(crew,[{opacity:0},{opacity:1,offset:.04},{opacity:1,offset:.96},{opacity:0}],{duration});
         if(index===0)completion=a;
