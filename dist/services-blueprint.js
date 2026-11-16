@@ -61,14 +61,15 @@
       completion.finished.then(destroy,destroy);
     }catch{destroy();}
   }
-  function checkVisibility(){
+  function checkVisibility(entries){
     if(started || motion.matches || document.hidden || document.documentElement.classList.contains('is-loading'))return;
     const rect=section.getBoundingClientRect();
     const visible=Math.min(rect.bottom,innerHeight)-Math.max(rect.top,0);
-    if(visible>=Math.min(rect.height*.12,innerHeight*.12))build();
+    const ratio=Array.isArray(entries)?entries[0].intersectionRatio:visible/rect.height;
+    if(ratio>=.55)build();
   }
   // The observer only triggers playback; scrolling never controls animation time.
-  const observer=new IntersectionObserver(checkVisibility,{threshold:.12});
+  const observer=new IntersectionObserver(checkVisibility,{threshold:.55});
   // Wait for the loading screen itself, without using the company animation event.
   const readyObserver=new MutationObserver(()=>{
     if(!document.documentElement.classList.contains('is-loading')){
