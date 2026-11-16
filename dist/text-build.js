@@ -3,6 +3,7 @@
   const heading = document.querySelector('#about-title');
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   if (!heading || motion.matches || !Element.prototype.animate || !window.IntersectionObserver) return;
+  const speed = 2;
   const ns = 'http://www.w3.org/2000/svg';
   // Centre lines, rather than a mesh or the outlines of a filled font.
   const rods = {
@@ -48,6 +49,7 @@
   }
   function animate(element,frames,options) {
     const a=element.animate(frames,{fill:'both',...options});
+    a.playbackRate = speed;
     job.animations.push(a);
     return a;
   }
@@ -60,7 +62,7 @@
     if (!job || job.done || job.started || document.hidden) return;
     job.started=true;
     heading.classList.replace('text-build-pending','text-building');
-    job.timer=setTimeout(finish,12000);
+    job.timer=setTimeout(finish,12000/speed);
     try {
       const origin=job.copy.getBoundingClientRect();
       const font=parseFloat(getComputedStyle(heading).fontSize);
@@ -87,9 +89,16 @@
       const stage=document.createElement('span');stage.className='text-build-stage';stage.setAttribute('aria-hidden','true');heading.append(stage);job.stage=stage;
       const steel=svgElement('svg',{class:'text-build-rebar',width:origin.width,height:origin.height,viewBox:`0 0 ${origin.width} ${origin.height}`});stage.append(steel);
       const stride=750, span=lines.length*stride, phaseStarts=[0,span+200,2*(span+200)], duration=phaseStarts[2]+span+220;
-      clearTimeout(job.timer);job.timer=setTimeout(finish,duration+650);
+      clearTimeout(job.timer);job.timer=setTimeout(finish,duration/speed+650);
+      // Separate lanes beside the complete text envelope, never across its letters.
+      const railLeft=Math.max(...lines.map(line=>line.right))+8;
+      const freeWidth=Math.max(0,Math.min(origin.width+12,innerWidth-origin.left-8)-railLeft);
+      const railWorkerWidth=Math.min(40,(freeWidth-4)/2);
+      const beside=railWorkerWidth>=14;
+      const workerWidth=beside?railWorkerWidth:16;
+      const workerScale=workerWidth/40;
       const crews=[0,1].map(index=>{
-        const crew=document.createElement('span');crew.className=`text-build-crew text-build-worker-${index+1}`;crew.innerHTML=model(index===1);stage.append(crew);return crew;
+        const crew=document.createElement('span');crew.className=`text-build-crew text-build-worker-${index+1}`;crew.innerHTML=model(index===1);crew.style.width=`${workerWidth}px`;crew.style.height=`${workerWidth*1.2}px`;crew.dataset.lane=beside?'side':'below';stage.append(crew);return crew;
       });
       const motions=[[],[]];
       let completion;
@@ -104,8 +113,10 @@
             const line=lines[row],middle=(line.left+line.right)/2;
             const left=index===0?line.left:middle,right=index===0?middle:line.right;
             const part=line.glyphs.filter(g=>(g.left+g.width/2<middle?0:1)===index);
-            const x=Math.max(0,Math.min(origin.width-40,(left+right)/2-31));
-            const y=line.top+font*.65-24;
+            const stationX=Math.max(0,Math.min(origin.width-40,(left+right)/2-31));
+            const stationY=line.top+font*.65-24;
+            const x=beside?railLeft+index*(workerWidth+4):Math.max(0,Math.min(origin.width-workerWidth,(left+right)/2-workerWidth/2));
+            const y=beside?line.top+font*.65-24*workerScale:origin.height+1;
             const start=phaseStarts[phase]+step*stride,arrival=start+travel,work=arrival+15;
             const pose=`translate(${x}px,${y}px)`;
             if(!motions[index].length)motions[index].push({transform:pose,offset:0});
@@ -137,7 +148,7 @@
               const bucket=crew.querySelector('.worker-bucket');
               animate(bucket,[{transform:'rotate(0)'},{transform:'rotate(32deg)',offset:.3},{transform:'rotate(32deg)',offset:.8},{transform:'rotate(0)'}],{duration:330,delay:work,fill:'none'});
             }
-            const effect=document.createElement('span');effect.className=`text-build-impact text-build-impact-${material}`;effect.style.left=`${Math.max(0,Math.min(origin.width-72,x-5))}px`;effect.style.top=`${y+11}px`;
+            const effect=document.createElement('span');effect.className=`text-build-impact text-build-impact-${material}`;effect.style.left=`${Math.max(0,Math.min(origin.width-72,stationX-5))}px`;effect.style.top=`${stationY+11}px`;
             effect.innerHTML=phase===0?'<svg viewBox="0 0 72 44" aria-hidden="true"><path d="M35 15l5-4m-6 9 9 2m-12-1-2 7" fill="none" stroke="#c99b40" stroke-width="1.5"/></svg>':phase===1?cloud:'<svg viewBox="0 0 72 44" aria-hidden="true"><path d="M27 19h16m-15 3h14m-11 3h9" stroke="#536153" stroke-width="2" opacity=".35"/></svg>';
             stage.insertBefore(effect,crews[0]);
             animate(effect,[{opacity:0,transform:'scale(.5)'},{opacity:phase===1?.35:.7,transform:'scale(.9)',offset:.25},{opacity:0,transform:'translateY(-5px) scale(1.2)'}],{duration:430,delay:work+60,easing:'ease-out'});

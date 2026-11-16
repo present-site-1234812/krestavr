@@ -290,7 +290,7 @@ dialog .button { margin-top: 18px; }
 .text-build-impact svg { width: 100%; height: 100%; overflow: visible; }
 .builder-dust-cloud { filter: blur(1.8px); }
 .text-build-crew { position: absolute; left: 0; top: 0; width: 40px; height: 48px; pointer-events: none; z-index: 2; line-height: 0; }
-.text-build-crew svg { width: 100%; height: 100%; overflow: visible; }
+.text-build-crew svg { width: 100%; height: 100%; overflow: visible; transform: scaleX(-1); }
 .text-build-crew path { stroke-linecap: round; stroke-linejoin: round; }
 .worker-shadow { fill: none; stroke: #6b7269; opacity: .22; stroke-width: 1.5; }
 .worker-boots { fill: #303b37; stroke: #303b37; stroke-width: 2; }
