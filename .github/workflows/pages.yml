@@ -36,6 +36,7 @@ jobs:
           node --check dist/script.js
           node --check dist/construction.js
           node --check dist/text-build.js
+          node --check dist/services-blueprint.js
           git diff --exit-code -- dist/index.html
       - name: Configure Pages
         uses: actions/configure-pages@v5

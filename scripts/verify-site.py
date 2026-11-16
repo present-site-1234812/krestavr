@@ -34,7 +34,7 @@ root = Path(__file__).resolve().parents[1] / "dist"
 html = (root / "index.html").read_text()
 expected = {
     "style": (root / "style.css").read_text(),
-    "script": (root / "script.js").read_text() + "\n" + (root / "construction.js").read_text() + "\n" + (root / "text-build.js").read_text(),
+    "script": (root / "script.js").read_text() + "\n" + (root / "construction.js").read_text() + "\n" + (root / "text-build.js").read_text() + "\n" + (root / "services-blueprint.js").read_text(),
 }
 for tag, source in expected.items():
     blocks = re.findall(rf"<{tag}>\n(.*?)\n</{tag}>", html, re.S)

@@ -44,6 +44,7 @@ node --check dist/loader.js
 node --check dist/script.js
 node --check dist/construction.js
 node --check dist/text-build.js
+node --check dist/services-blueprint.js
 
 git add -- .gitignore .github dist scripts README.md DESIGN-AUDIT.md LEGAL-AUDIT.md NAME-CHECK.md PUBLISHING.md
 if ! git diff --cached --quiet; then
