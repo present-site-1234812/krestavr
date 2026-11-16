@@ -265,8 +265,16 @@ dialog .button { margin-top: 18px; }
   .loader-trace { animation: none; stroke-dashoffset: 0; fill-opacity: 1; }
 }
 
-/* Heading construction: local SVG effects, no animation frame loop. */
-.text-building { position: relative; }
+/* Sequential heading construction, assembled from three courses of fragments. */
+.text-building, .text-build-pending { position: relative; }
+.text-build-pending > .text-build-copy { opacity: .12; }
+.text-building > .text-build-copy { opacity: 0; }
+.text-build-stage, .text-build-fragment, .text-build-tile { position: absolute; inset: 0; display: block; pointer-events: none; }
+.text-build-stage { z-index: 1; }
+.text-build-tile { color: inherit; }
+.text-build-impact { position: absolute; width: 72px; height: 44px; pointer-events: none; transform-origin: center bottom; }
+.text-build-impact svg { width: 100%; height: 100%; overflow: visible; }
+.builder-dust-cloud { filter: blur(1.8px); }
 .text-build-copy { display: block; }
 .text-build-crew {
   position: absolute; left: 0; top: 0; width: 80px; height: 48px;
@@ -291,6 +299,6 @@ dialog .button { margin-top: 18px; }
 @keyframes builder-dust { from { opacity: .4; transform: translate(0,0) scale(1); } to { opacity: 0; transform: translate(7px,-5px) scale(1.1); } }
 @keyframes builder-chip { from { opacity: .7; transform: translate(0,0); } to { opacity: 0; transform: translate(3px,8px); } }
 @media (prefers-reduced-motion: reduce) {
-  .text-build-copy { clip-path: none !important; }
-  .text-build-crew { display: none; }
+  .text-build-copy { opacity: 1 !important; }
+  .text-build-stage { display: none; }
 }

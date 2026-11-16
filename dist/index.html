@@ -267,8 +267,16 @@ dialog .button { margin-top: 18px; }
   .loader-trace { animation: none; stroke-dashoffset: 0; fill-opacity: 1; }
 }
 
-/* Heading construction: local SVG effects, no animation frame loop. */
-.text-building { position: relative; }
+/* Sequential heading construction, assembled from three courses of fragments. */
+.text-building, .text-build-pending { position: relative; }
+.text-build-pending > .text-build-copy { opacity: .12; }
+.text-building > .text-build-copy { opacity: 0; }
+.text-build-stage, .text-build-fragment, .text-build-tile { position: absolute; inset: 0; display: block; pointer-events: none; }
+.text-build-stage { z-index: 1; }
+.text-build-tile { color: inherit; }
+.text-build-impact { position: absolute; width: 72px; height: 44px; pointer-events: none; transform-origin: center bottom; }
+.text-build-impact svg { width: 100%; height: 100%; overflow: visible; }
+.builder-dust-cloud { filter: blur(1.8px); }
 .text-build-copy { display: block; }
 .text-build-crew {
   position: absolute; left: 0; top: 0; width: 80px; height: 48px;
@@ -293,8 +301,8 @@ dialog .button { margin-top: 18px; }
 @keyframes builder-dust { from { opacity: .4; transform: translate(0,0) scale(1); } to { opacity: 0; transform: translate(7px,-5px) scale(1.1); } }
 @keyframes builder-chip { from { opacity: .7; transform: translate(0,0); } to { opacity: 0; transform: translate(3px,8px); } }
 @media (prefers-reduced-motion: reduce) {
-  .text-build-copy { clip-path: none !important; }
-  .text-build-crew { display: none; }
+  .text-build-copy { opacity: 1 !important; }
+  .text-build-stage { display: none; }
 }
 
 </style><!-- Embedded Golos Text license:
@@ -947,12 +955,14 @@ requestFields.disabled = false;
   setPlaying(playing);
 })();
 
-/* Build the four section headings. Never leave content dependent on animation. */
+/* Sequential construction: horizontal courses assembled from separate fragments. */
 (() => {
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
-  const targets = document.querySelectorAll('#about-title,#services-title,#projects-title,#process-title');
-  if (!('IntersectionObserver' in window) || !Element.prototype.animate) return;
-  const active = new Set();
+  const targets = [...document.querySelectorAll('#about-title,#services-title,#projects-title,#process-title')];
+  if (motion.matches || !('IntersectionObserver' in window) || !Element.prototype.animate) return;
+  const jobs = [];
+  let current = null;
+  let suspended = false;
   const worker = `<svg viewBox="0 0 80 48" aria-hidden="true" focusable="false">
     <path class="builder-scaffold" d="M4 43h67M9 43v5m52-5v5"/>
     <g class="builder-helper" transform="translate(4 17) scale(.72)"><path d="M12 23l-3 8m9-8 4 8M10 16l-5 5h17"/><path class="builder-vest" d="M10 13h9l3 11H8z"/><circle class="builder-face" cx="15" cy="9" r="4"/><path class="builder-hat" d="M9 8a6 6 0 0 1 12 0m-14 1h16"/><path class="builder-brick" d="M0 17h10v5H0z"/></g>
@@ -961,37 +971,42 @@ requestFields.disabled = false;
     <g class="builder-dust"><circle cx="57" cy="36" r="2"/><circle cx="63" cy="39" r="3"/><circle cx="69" cy="36" r="1.5"/></g>
     <g class="builder-chips"><path d="M61 29h3v3h-3zM68 31h2v2h-2z"/></g>
   </svg>`;
+  const cloud = `<svg viewBox="0 0 72 44" aria-hidden="true"><g class="builder-dust-cloud" fill="#b3a58d"><ellipse cx="30" cy="27" rx="13" ry="8"/><circle cx="19" cy="22" r="9"/><circle cx="40" cy="19" r="12"/><circle cx="53" cy="27" r="8"/></g><g fill="#9d6c50"><path d="M18 34h4v3h-4zM44 33h3v4h-3zM57 31h2v2h-2z"/></g><path d="M34 12l-2-6m13 9 6-4m-25 7-7-2" fill="none" stroke="#c49b45" stroke-width="1.5"/></svg>`;
 
-  function finish(item) {
-    clearTimeout(item.timer);
-    item.animations.forEach(animation => animation.cancel());
-    // Restore the exact text/BR nodes, rather than retaining animation wrappers.
-    item.copy.replaceWith(...item.copy.childNodes);
-    item.crew.remove();
-    item.el.classList.remove('text-building');
-    active.delete(item);
+  function restore(job) {
+    if (job.done) return;
+    job.done = true;
+    clearTimeout(job.timer);
+    job.animations.forEach(animation => animation.cancel());
+    if (job.copy.isConnected) job.copy.replaceWith(...job.copy.childNodes);
+    job.stage?.remove();
+    job.el.classList.remove('text-building', 'text-build-pending');
+    job.el.dataset.built = 'true';
+    if (current === job) current = null;
   }
-  function build(el) {
-    if (motion.matches || el.dataset.built || document.hidden) return;
-    const bounds = el.getBoundingClientRect();
-    if (!bounds.width || !bounds.height) return;
-    el.dataset.built = 'true';
-    const copy = document.createElement('span');
-    copy.className = 'text-build-copy';
-    while (el.firstChild) copy.append(el.firstChild);
-    el.append(copy);
-    const crew = document.createElement('span');
-    crew.className = 'text-build-crew';
-    crew.setAttribute('aria-hidden', 'true');
-    crew.innerHTML = worker;
-    el.append(crew);
-    el.classList.add('text-building');
-    const item = {el, copy, crew, animations: [], timer: 0};
-    active.add(item);
+  function complete(job) {
+    restore(job);
+    pump();
+  }
+  function failOpen() {
+    suspended = true;
+    jobs.forEach(restore);
+  }
+  function animate(job, element, frames, options) {
+    const animation = element.animate(frames, {fill: 'both', ...options});
+    job.animations.push(animation);
+    return animation;
+  }
+  function build(job) {
+    current = job;
+    job.el.classList.remove('text-build-pending');
+    job.el.classList.add('text-building');
+    // A separate clock guarantees restoration even if all browser animations stop.
+    job.timer = setTimeout(() => complete(job), 4200);
     try {
-      const origin = copy.getBoundingClientRect();
+      const origin = job.copy.getBoundingClientRect();
       const lines = [];
-      const walker = document.createTreeWalker(copy, NodeFilter.SHOW_TEXT);
+      const walker = document.createTreeWalker(job.copy, NodeFilter.SHOW_TEXT);
       while (walker.nextNode()) {
         const range = document.createRange();
         range.selectNodeContents(walker.currentNode);
@@ -1008,46 +1023,116 @@ requestFields.disabled = false;
           }
         }
       }
-      if (!lines.length) return finish(item);
-      lines.sort((a, b) => a.top - b.top);
-      const clips = [], positions = [];
-      const polygon = (line, x) => `polygon(0 0,100% 0,100% ${line.top}px,${x}px ${line.top}px,${x}px ${line.bottom}px,0 ${line.bottom}px)`;
-      lines.forEach((line, index) => {
-        const start = index / lines.length;
-        const end = (index + 1) / lines.length - (index === lines.length - 1 ? 0 : .001);
-        clips.push({clipPath: polygon(line, line.left), offset: start}, {clipPath: polygon(line, line.right), offset: end});
-        positions.push({transform: `translate(${line.left - 57}px,${line.bottom - 40}px)`, opacity: index === 0 ? 0 : 1, offset: start}, {transform: `translate(${line.right - 57}px,${line.bottom - 40}px)`, opacity: index === lines.length - 1 ? 0 : 1, offset: end});
-      });
-      // Fade in quickly; keep the workers visible until the last few letters.
-      positions.splice(1, 0, {...positions[0], opacity: 1, offset: .025});
-      const last = positions[positions.length - 1];
-      positions.splice(positions.length - 1, 0, {...last, opacity: 1, offset: .96});
-      const duration = 1250 + lines.length * 400;
-      // Set the fallback BEFORE starting anything that could fail or be interrupted.
-      item.timer = setTimeout(() => finish(item), duration + 350);
-      const options = {duration, easing: 'linear', fill: 'both'};
-      item.animations.push(copy.animate(clips, options), crew.animate(positions, options));
-      item.animations[0].finished.then(() => { if (active.has(item)) finish(item); }, () => { if (active.has(item)) finish(item); });
+      if (!lines.length) return complete(job);
+      lines.sort((a,b) => a.top - b.top);
+      const stage = document.createElement('span');
+      stage.className = 'text-build-stage';
+      stage.setAttribute('aria-hidden', 'true');
+      job.stage = stage;
+      job.el.append(stage);
+      const ink = getComputedStyle(job.el).color;
+      const order = [0,2,1,3];
+      let duration = 0;
+      const positions = [];
+      // Lay the bottom course of every line first, then the middle and top.
+      for (let course = 0; course < 3; course++) {
+        lines.forEach((line,row) => {
+          const height = (line.bottom - line.top) / 3;
+          const top = line.bottom - (course + 1) * height;
+          const bottom = top + height;
+          order.forEach((column,step) => {
+            const left = line.left + (line.right-line.left) * column / 4;
+            const right = line.left + (line.right-line.left) * (column+1) / 4;
+            const delay = 120 + course * 620 + row * 95 + step * 90;
+            const fragment = document.createElement('span');
+            fragment.className = 'text-build-fragment';
+            const text = job.copy.cloneNode(true);
+            text.className = 'text-build-tile';
+            text.style.clipPath = `inset(${top}px ${Math.max(0,origin.width-right)}px ${Math.max(0,origin.height-bottom)}px ${left}px)`;
+            fragment.append(text);
+            stage.append(fragment);
+            animate(job, fragment, [
+              {opacity:0, transform:`translate(${column%2 ? 7 : -7}px,12px)`, color:'#a48e70'},
+              {opacity:.8, transform:'translate(0,-1px)', color:'#8e7c60', offset:.7},
+              {opacity:1, transform:'translate(0,0)', color:ink}
+            ], {duration:500, delay, easing:'cubic-bezier(.2,.7,.3,1)'});
+            const dust = document.createElement('span');
+            dust.className = 'text-build-impact';
+            dust.style.left = `${Math.max(0,Math.min(origin.width-72,(left+right)/2-36))}px`;
+            dust.style.top = `${bottom-30}px`;
+            dust.innerHTML = cloud;
+            stage.append(dust);
+            animate(job,dust,[
+              {opacity:0,transform:'translateY(3px) scale(.35)'},
+              {opacity:.48,transform:'translateY(-2px) scale(.85)',offset:.2},
+              {opacity:0,transform:'translateY(-15px) scale(1.3)'}
+            ],{duration:650,delay:delay+290,easing:'ease-out'});
+            const x = Math.max(0, Math.min(origin.width-80, (left+right)/2-45));
+            positions.push({time:delay,transform:`translate(${x}px,${bottom-40}px)`});
+            duration = Math.max(duration, delay+940);
+          });
+        });
+      }
+      const crew = document.createElement('span');
+      crew.className = 'text-build-crew';
+      crew.innerHTML = worker;
+      stage.append(crew);
+      positions.sort((a,b)=>a.time-b.time);
+      const frames = [{transform:positions[0].transform,opacity:0,offset:0},...positions.map(position=>({transform:position.transform,opacity:1,offset:position.time/duration})),{transform:positions.at(-1).transform,opacity:0,offset:1}];
+      const completion = animate(job,crew,frames,{duration,easing:'ease-in-out'});
+      // The last dust cloud settles before the queue advances to another heading.
+      completion.finished.then(()=>{if(!job.done)complete(job);},()=>{if(!job.done)complete(job);});
     } catch {
-      finish(item);
+      complete(job);
     }
   }
-  const observer = new IntersectionObserver(entries => entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      build(entry.target);
-      if (entry.target.dataset.built) observer.unobserve(entry.target);
+  function pump() {
+    if (current || suspended || document.hidden) return;
+    const next = jobs.find(job => !job.done && job.seen);
+    if (!next) return;
+    // Jumping directly to a later section must not leave earlier text unfinished.
+    for (const job of jobs) {
+      if (job === next) break;
+      if (!job.done) restore(job);
     }
-  }), {threshold: .3});
-  function observe() { targets.forEach(el => observer.observe(el)); }
-  if (document.documentElement.classList.contains('is-loading')) document.addEventListener('site:ready', observe, {once: true});
-  else observe();
-  window.addEventListener('resize', () => active.forEach(finish), {passive: true});
-  window.addEventListener('pagehide', () => active.forEach(finish));
+    build(next);
+  }
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const job = jobs.find(job => job.el === entry.target);
+      if (job && !job.done) job.seen = true;
+      observer.unobserve(entry.target);
+    });
+    pump();
+  }, {threshold:.3});
+  function setup() {
+    try {
+      targets.forEach(el => {
+        const copy = document.createElement('span');
+        copy.className = 'text-build-copy';
+        while (el.firstChild) copy.append(el.firstChild);
+        el.append(copy);
+        const job = {el,copy,seen:false,done:false,animations:[],timer:0};
+        jobs.push(job);
+        el.classList.add('text-build-pending');
+        observer.observe(el);
+      });
+    } catch { failOpen(); }
+  }
+  if (document.documentElement.classList.contains('is-loading')) document.addEventListener('site:ready', setup, {once:true});
+  else setup();
+  window.addEventListener('resize', () => {
+    // A responsive line break invalidates fragment coordinates; reveal safely.
+    if (current) restore(current);
+    pump();
+  }, {passive:true});
+  window.addEventListener('pagehide', failOpen);
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) active.forEach(finish);
-    else observe();
+    if (document.hidden && current) restore(current);
+    if (!document.hidden) pump();
   });
-  motion.addEventListener('change', () => { if (motion.matches) active.forEach(finish); });
+  motion.addEventListener('change', () => { if (motion.matches) failOpen(); });
 })();
 
 </script></body></html>
