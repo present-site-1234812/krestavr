@@ -265,13 +265,26 @@ dialog .button { margin-top: 18px; }
   .loader-trace { animation: none; stroke-dashoffset: 0; fill-opacity: 1; }
 }
 
-/* Sequential heading construction, assembled from three courses of fragments. */
+/* Quiet workstations; material layers build timber, concrete and painted type. */
 .text-building, .text-build-pending { position: relative; }
 .text-build-pending > .text-build-copy { opacity: .12; }
 .text-building > .text-build-copy { opacity: 0; }
-.text-build-stage, .text-build-fragment, .text-build-tile { position: absolute; inset: 0; display: block; pointer-events: none; }
+.text-build-stage, .text-build-material { position: absolute; inset: 0; display: block; pointer-events: none; }
 .text-build-stage { z-index: 1; }
-.text-build-tile { color: inherit; }
+.text-build-material { opacity: 0; }
+.text-build-wood {
+  color: transparent; -webkit-text-fill-color: transparent;
+  background: repeating-linear-gradient(7deg, #8e6440 0 1px, #be9466 1px 4px, #aa8053 4px 5px, #d0ae7c 5px 9px);
+  background-clip: text; -webkit-background-clip: text;
+}
+.text-build-concrete {
+  color: transparent; -webkit-text-fill-color: transparent;
+  background: radial-gradient(circle at 2px 3px, #777b74 .65px, transparent 1.1px) 0 0 / 7px 9px,
+    radial-gradient(circle at 5px 6px, #c6c8bf .7px, transparent 1.2px) 0 0 / 11px 8px, #a4a79e;
+  background-clip: text; -webkit-background-clip: text;
+}
+.text-build-paint { color: inherit; }
+.text-build-paint-edge { position: absolute; left: 0; top: 0; height: 5px; background: currentColor; pointer-events: none; }
 .text-build-impact { position: absolute; width: 72px; height: 44px; pointer-events: none; transform-origin: center bottom; }
 .text-build-impact svg { width: 100%; height: 100%; overflow: visible; }
 .builder-dust-cloud { filter: blur(1.8px); }
@@ -287,15 +300,14 @@ dialog .button { margin-top: 18px; }
 .text-build-crew .builder-face { fill: #dbc5a5; }
 .text-build-crew .builder-hat { fill: #d4ad52; stroke: #b28a38; }
 .text-build-crew .builder-brick { fill: #bd785b; stroke: #9e6149; }
-.builder-arm { transform-origin: 16px 16px; animation: builder-hammer 280ms ease-in-out infinite alternate; }
-.text-build-crew .builder-sparks { animation: builder-spark 560ms ease-out infinite; transform-origin: 59px 24px; }
+.builder-arm { transform-origin: 16px 16px; animation: builder-hammer 550ms ease-in-out infinite alternate; }
+.text-build-crew .builder-sparks { opacity: 0; transform-origin: 59px 24px; }
 .text-build-crew .builder-sparks path { stroke: #c79539; stroke-width: 1.3; }
 .builder-sparks circle { fill: #dfba65; }
 .builder-dust { fill: #b7ad97; animation: builder-dust 850ms ease-out infinite; }
 .text-build-crew .builder-chips path { fill: #aa7155; stroke: none; }
 .builder-chips { animation: builder-chip 700ms ease-in infinite; }
-@keyframes builder-hammer { to { transform: rotate(-28deg); } }
-@keyframes builder-spark { 0%, 35% { opacity: 0; transform: scale(.25); } 45% { opacity: 1; } 100% { opacity: 0; transform: scale(1.35); } }
+@keyframes builder-hammer { to { transform: rotate(-16deg); } }
 @keyframes builder-dust { from { opacity: .4; transform: translate(0,0) scale(1); } to { opacity: 0; transform: translate(7px,-5px) scale(1.1); } }
 @keyframes builder-chip { from { opacity: .7; transform: translate(0,0); } to { opacity: 0; transform: translate(3px,8px); } }
 @media (prefers-reduced-motion: reduce) {

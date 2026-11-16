@@ -1,4 +1,4 @@
-/* Sequential construction: horizontal courses assembled from separate fragments. */
+/* Sequential material construction: timber, concrete, then painted type. */
 (() => {
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const targets = [...document.querySelectorAll('#about-title,#services-title,#projects-title,#process-title')];
@@ -73,57 +73,63 @@
       stage.setAttribute('aria-hidden', 'true');
       job.stage = stage;
       job.el.append(stage);
-      const ink = getComputedStyle(job.el).color;
-      const order = [0,2,1,3];
-      let duration = 0;
-      const positions = [];
-      // Lay the bottom course of every line first, then the middle and top.
-      for (let course = 0; course < 3; course++) {
-        lines.forEach((line,row) => {
-          const height = (line.bottom - line.top) / 3;
-          const top = line.bottom - (course + 1) * height;
-          const bottom = top + height;
-          order.forEach((column,step) => {
-            const left = line.left + (line.right-line.left) * column / 4;
-            const right = line.left + (line.right-line.left) * (column+1) / 4;
-            const delay = 120 + course * 620 + row * 95 + step * 90;
-            const fragment = document.createElement('span');
-            fragment.className = 'text-build-fragment';
-            const text = job.copy.cloneNode(true);
-            text.className = 'text-build-tile';
-            text.style.clipPath = `inset(${top}px ${Math.max(0,origin.width-right)}px ${Math.max(0,origin.height-bottom)}px ${left}px)`;
-            fragment.append(text);
-            stage.append(fragment);
-            animate(job, fragment, [
-              {opacity:0, transform:`translate(${column%2 ? 7 : -7}px,12px)`, color:'#a48e70'},
-              {opacity:.8, transform:'translate(0,-1px)', color:'#8e7c60', offset:.7},
-              {opacity:1, transform:'translate(0,0)', color:ink}
-            ], {duration:500, delay, easing:'cubic-bezier(.2,.7,.3,1)'});
-            const dust = document.createElement('span');
-            dust.className = 'text-build-impact';
-            dust.style.left = `${Math.max(0,Math.min(origin.width-72,(left+right)/2-36))}px`;
-            dust.style.top = `${bottom-30}px`;
-            dust.innerHTML = cloud;
-            stage.append(dust);
-            animate(job,dust,[
-              {opacity:0,transform:'translateY(3px) scale(.35)'},
-              {opacity:.48,transform:'translateY(-2px) scale(.85)',offset:.2},
-              {opacity:0,transform:'translateY(-15px) scale(1.3)'}
-            ],{duration:650,delay:delay+290,easing:'ease-out'});
-            const x = Math.max(0, Math.min(origin.width-80, (left+right)/2-45));
-            positions.push({time:delay,transform:`translate(${x}px,${bottom-40}px)`});
-            duration = Math.max(duration, delay+940);
-          });
-        });
-      }
+      const duration = 3700;
+      const reveal = [
+        {clipPath:'inset(100% 0 0 0)', opacity:0, transform:'translateY(4px)'},
+        {clipPath:'inset(70% 0 0 0)', opacity:1, transform:'translateY(0)', offset:.3},
+        {clipPath:'inset(35% 0 0 0)', opacity:1, transform:'translateY(0)', offset:.65},
+        {clipPath:'inset(0% 0 0 0)', opacity:1, transform:'translateY(0)'}
+      ];
+      const addMaterial = (material, delay, time) => {
+        const layer = job.copy.cloneNode(true);
+        layer.className = `text-build-material text-build-${material}`;
+        stage.append(layer);
+        animate(job,layer,reveal,{duration:time,delay,easing:'ease-in-out'});
+      };
+      // Each material is completed and briefly held before the next is applied.
+      addMaterial('wood',100,850);
+      addMaterial('concrete',1250,900);
+      addMaterial('paint',2450,950);
       const crew = document.createElement('span');
       crew.className = 'text-build-crew';
       crew.innerHTML = worker;
+      crew.style.left = `${Math.max(0,Math.min(origin.width-80,lines[0].left+22))}px`;
+      crew.style.top = `${lines.at(-1).bottom-36}px`;
       stage.append(crew);
-      positions.sort((a,b)=>a.time-b.time);
-      const frames = [{transform:positions[0].transform,opacity:0,offset:0},...positions.map(position=>({transform:position.transform,opacity:1,offset:position.time/duration})),{transform:positions.at(-1).transform,opacity:0,offset:1}];
-      const completion = animate(job,crew,frames,{duration,easing:'ease-in-out'});
-      // The last dust cloud settles before the queue advances to another heading.
+      // Only the tools move. The crew stays at its workstation throughout.
+      const completion = animate(job,crew,[
+        {opacity:0,offset:0},{opacity:1,offset:.08},
+        {opacity:1,offset:.91},{opacity:0,offset:1}
+      ],{duration,easing:'ease-in-out'});
+      animate(job,crew.querySelector('.builder-sparks'),[
+        {opacity:0},{opacity:.7,offset:.45},{opacity:0,offset:1}
+      ],{duration:700,delay:1250});
+      // A few local plumes at material changes, rather than dust on every letter.
+      for (const phase of [420,1510]) {
+        lines.forEach((line,row) => {
+          const dust = document.createElement('span');
+          dust.className = 'text-build-impact';
+          dust.style.left = `${Math.max(0,Math.min(origin.width-72,line.left+(line.right-line.left)*.65-36))}px`;
+          dust.style.top = `${line.bottom-32}px`;
+          dust.innerHTML = cloud;
+          stage.append(dust);
+          animate(job,dust,[
+            {opacity:0,transform:'translateY(3px) scale(.4)'},
+            {opacity:.45,transform:'translateY(-2px) scale(.9)',offset:.25},
+            {opacity:0,transform:'translateY(-14px) scale(1.4)'}
+          ],{duration:850,delay:phase+row*110,easing:'ease-out'});
+        });
+      }
+      // A broad, faint wet edge accompanies the final coat of paint.
+      const edge = document.createElement('span');
+      edge.className = 'text-build-paint-edge';
+      edge.style.width = `${Math.max(...lines.map(line=>line.right))}px`;
+      stage.append(edge);
+      animate(job,edge,[
+        {transform:`translateY(${origin.height}px)`,opacity:0},
+        {transform:`translateY(${origin.height*.8}px)`,opacity:.12,offset:.2},
+        {transform:'translateY(0)',opacity:0}
+      ],{duration:950,delay:2450,easing:'ease-in-out'});
       completion.finished.then(()=>{if(!job.done)complete(job);},()=>{if(!job.done)complete(job);});
     } catch {
       complete(job);
