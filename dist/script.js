@@ -146,3 +146,72 @@ document.querySelector('#copy-request').addEventListener('click', async () => {
 document.querySelector('#year').textContent = new Date().getFullYear();
 // Keep the form inert if initialization fails or JavaScript is unavailable.
 requestFields.disabled = false;
+
+// Reveal each text group once, when it enters the viewport.
+(() => {
+  const motion = matchMedia('(prefers-reduced-motion: reduce)');
+  if (motion.matches || !window.IntersectionObserver || !Element.prototype.animate) return;
+  const selector = [
+    '.hero-top', '#hero-title',
+    '#about .section-label', '#about .intro-grid > div > p', '#about .text-link', '#about .principles > div',
+    '#projects .section-label', '#projects h2', '#projects .filters', '#projects .portfolio-intro', '#projects .project-caption', '#projects .demo-note',
+    '#process .section-label', '#process h2', '#process .section-heading > p', '#process .steps > li',
+    '#contact .section-label', '#contact h2', '#contact .contact-grid > div > p', '#contact .contact-note', '#contact form',
+    '.legal h2', '.legal-body > *', 'footer > *'
+  ].join(',');
+  const pending = new Set(document.querySelectorAll(selector));
+  const running = new Map();
+  const delays = new Map();
+  const groups = new Map();
+  pending.forEach(element => {
+    const group = element.closest('section, footer');
+    const index = groups.get(group) || 0;
+    groups.set(group, index + 1);
+    delays.set(element, (index % 4) * 65);
+    element.classList.add('text-reveal-pending');
+  });
+  function reveal(element, immediate = false) {
+    if (!pending.delete(element)) return;
+    observer.unobserve(element);
+    element.classList.remove('text-reveal-pending');
+    if (immediate || motion.matches) return;
+    try {
+      const animation = element.animate([
+        {opacity: 0, transform: 'translateY(8px)'},
+        {opacity: 1, transform: 'translateY(0)'}
+      ], {duration: 550, delay: delays.get(element), easing: 'cubic-bezier(.22,1,.36,1)', fill: 'both'});
+      const finish = () => {
+        clearTimeout(running.get(element)?.timer);
+        running.delete(element);
+        animation.cancel();
+      };
+      running.set(element, {animation, timer: setTimeout(finish, 1100)});
+      animation.finished.then(finish, finish);
+    } catch { /* The unstyled text remains visible if animation is unavailable. */ }
+  }
+  function finishAll() {
+    pending.forEach(element => reveal(element, true));
+    [...running.values()].forEach(({animation}) => animation.cancel());
+    observer.disconnect();
+    readyObserver.disconnect();
+  }
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => { if (entry.isIntersecting) reveal(entry.target); });
+  }, {threshold: .15, rootMargin: '0px 0px -24px 0px'});
+  function start() {
+    if (document.documentElement.classList.contains('is-loading')) return;
+    readyObserver.disconnect();
+    pending.forEach(element => observer.observe(element));
+  }
+  const readyObserver = new MutationObserver(start);
+  if (document.documentElement.classList.contains('is-loading')) {
+    readyObserver.observe(document.documentElement, {attributes: true, attributeFilter: ['class']});
+  } else start();
+  // Keyboard users can reach controls before their scroll animation has run.
+  document.addEventListener('focusin', event => {
+    pending.forEach(element => { if (element.contains(event.target)) reveal(element, true); });
+    running.forEach(({animation}, element) => { if (element.contains(event.target)) animation.cancel(); });
+  });
+  window.addEventListener('pagehide', finishAll);
+  motion.addEventListener('change', () => { if (motion.matches) finishAll(); });
+})();

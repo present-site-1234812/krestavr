@@ -343,3 +343,6 @@ dialog .button { margin-top: 18px; }
 /* Content fades into the drafting paper without changing the layout. */
 .services .services-text-pending { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .services .services-text-pending { opacity: 1; } }
+
+.text-reveal-pending { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .text-reveal-pending { opacity: 1; } }
