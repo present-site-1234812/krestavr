@@ -33,16 +33,16 @@
         <rect class="blueprint-surface" width="1440" height="900"/>
       </svg>`;
       section.prepend(layer);
-      const titles=[...section.querySelectorAll('.service-list summary h3')];
+      const summaries=[...section.querySelectorAll('.service-list summary')];
       const markDuration=280,markStep=420,firstMark=300;
-      const lastMarkEnd=firstMark+Math.max(0,titles.length-1)*markStep+markDuration;
+      const lastMarkEnd=firstMark+Math.max(0,summaries.length-1)*markStep+markDuration;
       const shadingStart=lastMarkEnd+700;
       const shadingEnd=shadingStart+1900;
       clearTimeout(timer);timer=setTimeout(destroy,shadingEnd+850);
-      titles.forEach((title,index)=>{
+      summaries.forEach((summary,index)=>{
         const check=document.createElement('span');check.className='services-blueprint-check';check.setAttribute('aria-hidden','true');
         check.innerHTML='<svg viewBox="0 0 24 18" focusable="false" aria-hidden="true"><path d="M3 9l6 6L21 3" pathLength="1"/></svg>';
-        title.append(check);checks.push(check);
+        summary.prepend(check);checks.push(check);
         const delay=firstMark+index*markStep;
         animate(check,[{opacity:0},{opacity:1}],{duration:90,delay});
         animate(check.querySelector('path'),[{strokeDashoffset:1},{strokeDashoffset:0}],{duration:markDuration,delay,easing:'ease-out'});
